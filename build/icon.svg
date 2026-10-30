@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<!-- pocketedits-app-icon.svg from "Pocket Edits Files/pocketedits-logo", unchanged, placed on the
+     macOS icon grid (824px artwork with a 100px margin) so it matches other Dock icons. -->
+<svg x="100" y="100" width="824" height="824" viewBox="0 0 100 100">
+<rect width="100" height="100" rx="23" fill="#E8A93B"/><g transform="translate(14 15) scale(0.72)"><path d="M15 10 H85 L84 75 L50 88 L16 75 Z" fill="#111111" stroke="#111111" stroke-width="5" stroke-linejoin="round"/><path d="M18 21.5 H82" stroke="#E8A93B" stroke-width="1.2" opacity="0.55"/>
+<path d="M19 17 H81" stroke="#E8A93B" stroke-width="2" stroke-dasharray="3.2 2.4" stroke-linecap="round" fill="none"/>
+<path d="M20.5 26 L21.3 71.3 L50 82.3 L78.7 71.3 L79.5 26" fill="none" stroke="#E8A93B" stroke-width="2" stroke-dasharray="3.2 2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="32.75" y="46" width="4.5" height="12" rx="2.25" fill="#E8A93B"/>
+<rect x="40.25" y="40" width="4.5" height="24" rx="2.25" fill="#E8A93B"/>
+<rect x="47.75" y="35" width="4.5" height="34" rx="2.25" fill="#E8A93B"/>
+<rect x="55.25" y="42" width="4.5" height="20" rx="2.25" fill="#E8A93B"/>
+<rect x="62.75" y="47" width="4.5" height="10" rx="2.25" fill="#E8A93B"/></g>
+</svg>
+</svg>

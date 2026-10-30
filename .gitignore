@@ -1,0 +1,9 @@
+node_modules/
+dist/
+vendor/python/
+vendor/ffmpeg/ffmpeg
+build/ffmpeg-work/
+__pycache__/
+*.pyc
+.DS_Store
+github/

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketEdits</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* PocketEdits look: the website's palette and type (pocketedits-site/index.html).
+     Tailwind's CDN stylesheet loads after this one, so overrides of its utilities use
+     doubled class selectors (e.g. .card.card) to win on specificity. */
+  @font-face {
+    font-family: 'Archivo';
+    font-style: normal;
+    font-weight: 400 900;
+    font-stretch: 62% 125%;
+    src: url(fonts/archivo-latin.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'Archivo';
+    font-style: normal;
+    font-weight: 400 900;
+    font-stretch: 62% 125%;
+    src: url(fonts/archivo-latin-ext.woff2) format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  :root {
+    color-scheme: light;
+    --gold: #e3a63f;
+    --gold-deep: #c98a2e;
+    --gold-pale: #f6dca8;
+    --ink: #000;
+    --text: #2a2a2a;
+    --text-dim: #5e5a54;
+    --paper: #fff;
+    --band: #f2f1ed;
+    --band-hover: #e9e7e1;
+    --ok: #1f6b3d;
+    --err: #a3261b;
+    --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  body {
+    font-family: 'Archivo', -apple-system, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Display numbers (BPM, key, metronome) use Archivo's wide heavy cut, as the site's headings do. */
+  .font-display { color: var(--ink); font-weight: 800; font-stretch: 125%; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.18); border-radius: 8px; border: 3px solid var(--paper); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+
+  /* --- Header: the site's gold hero band. Row 1 is the draggable title bar with the
+     wordmark; row 2 is the site's pill tool switcher. --- */
+  .appbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    background: var(--gold); color: var(--ink);
+    padding: 0 16px 12px;
+    -webkit-app-region: drag;
+  }
+  .titlebar { height: 44px; display: flex; align-items: center; justify-content: center; }
+  .mac-titlebar .titlebar { padding-left: 64px; justify-content: flex-start; }
+  /* Logo lockup from the brand sheet: shield mark + wide, heavy wordmark. */
+  .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-stretch: 125%; font-size: 16px; letter-spacing: -0.02em; color: #111; }
+  .brand img { width: auto; height: 28px; margin: -3px -2px -3px -4px; }
+  .tabbar {
+    display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(0, 0, 0, 0.1);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tabbar button {
+    -webkit-app-region: no-drag;
+    flex: 1 0 auto; height: 34px; padding: 0 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    transition: transform 140ms var(--spring);
+  }
+  .tabbar svg { display: none; }
+  .tabbar button:hover { background: rgba(0, 0, 0, 0.08); }
+  .tabbar button:active { transform: scale(0.95); }
+  .tabbar button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .tabbar button[aria-selected="true"] { background: var(--ink); color: var(--gold); }
+
+  /* --- Panels: white page, no boxes; controls sit in the site's warm grey --- */
+  .card.card { position: relative; background: transparent; padding: 0; border-radius: 0; box-shadow: none; }
+
+  .field-label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .hint, .note { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .hint-inline { font-size: 13px; color: var(--text-dim); font-weight: 400; }
+  .text-stone-500.text-stone-500, .text-stone-400.text-stone-400 { color: var(--text-dim); }
+  .text-stone-300.text-stone-300, .text-stone-200.text-stone-200, .text-stone-100.text-stone-100 { color: var(--ink); }
+
+  .input-field.input-field, .select-field.select-field {
+    background-color: var(--band); border: 2px solid transparent; border-radius: 12px;
+    color: var(--ink); font-size: 14px;
+  }
+  input.input-field.input-field, .select-field.select-field { height: 42px; padding-top: 0; padding-bottom: 0; }
+  textarea.input-field.input-field { padding: 10px 12px; line-height: 1.5; }
+  .input-field::placeholder { color: #8c877f; }
+  .input-field:hover, .select-field:hover { background-color: var(--band-hover); }
+  .input-field:focus, .select-field:focus-visible { outline: none; border-color: var(--ink); background-color: var(--paper); }
+  input[type="number"].input-field { -moz-appearance: textfield; }
+  .select-field.select-field {
+    appearance: none; cursor: pointer; padding-left: 12px; padding-right: 34px;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+
+  /* --- Pill groups (tool pickers, fade shape, join mode): the site's .tools look --- */
+  .seg { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--band); }
+  .seg button {
+    flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap;
+    transition: transform 140ms var(--spring);
+  }
+  .seg button:hover { background: rgba(0, 0, 0, 0.06); }
+  .seg button:active { transform: scale(0.95); }
+  .seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .seg button[aria-selected="true"], .seg button[aria-checked="true"] { background: var(--ink); color: var(--gold); }
+  .seg-sm button { height: 30px; }
+
+  /* --- Format chips: black pill + check when chosen --- */
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 36px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    color: var(--ink); background: var(--band);
+    transition: transform 140ms var(--spring);
+  }
+  .chip svg { display: none; }
+  .chip:hover { background: var(--band-hover); }
+  .chip:active { transform: scale(0.95); }
+  .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .chip[aria-checked="true"] { background: var(--ink); color: var(--gold); padding-left: 12px; }
+  .chip[aria-checked="true"] svg { display: block; }
+  .format-picker { display: flex; flex-direction: column; gap: 16px; }
+  .setting-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+  .setting-row .note { padding-bottom: 10px; }
+  .disclosure {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    font-size: 13px; font-weight: 600; color: var(--ink); border-radius: 6px; padding: 2px 4px; margin-left: -4px;
+  }
+  .disclosure svg { transition: transform 200ms var(--spring); }
+  .disclosure[aria-expanded="true"] svg { transform: rotate(90deg); }
+  .disclosure:hover { text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .disclosure:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* --- Buttons: the site's pills. Solid = black with gold text, line = black outline. --- */
+  .btn-primary.btn-primary {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px; border-radius: 999px; padding: 0 22px;
+    font-size: 15px; font-weight: 700; color: var(--gold); background: var(--ink); border: 2px solid var(--ink);
+    transition: transform 160ms var(--spring);
+  }
+  .btn-primary:hover { background: #222; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(1px) scale(0.98); }
+  .btn-primary:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .btn-primary:disabled { background: var(--band); border-color: var(--band); color: #8c877f; cursor: not-allowed; transform: none; }
+  /* Working: a grey track that fills with gold as the backend reports progress. */
+  .btn-primary.is-busy { background: var(--band); border-color: var(--band); color: var(--ink); cursor: progress; transform: none; }
+  .btn-fill {
+    position: absolute; inset: 0; display: none; transform-origin: left; transform: scaleX(0);
+    background: var(--gold); transition: transform 300ms ease-out;
+  }
+  .btn-primary.is-busy .btn-fill { display: block; }
+  .btn-primary.is-indeterminate .btn-fill { width: 35%; transition: none; animation: sweep 1.3s ease-in-out infinite; }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  .btn-label { position: relative; font-variant-numeric: tabular-nums; }
+
+  .btn-secondary.btn-secondary, .btn-accent.btn-accent {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 38px; padding-left: 16px; padding-right: 16px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; color: var(--ink); background: transparent; border: 2px solid var(--ink);
+    transition: transform 140ms var(--spring);
+  }
+  .btn-secondary:hover, .btn-accent:hover { background: rgba(0, 0, 0, 0.06); }
+  .btn-secondary:active, .btn-accent:active { transform: translateY(1px) scale(0.98); }
+  .btn-secondary:focus-visible, .btn-accent:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .btn-secondary:disabled, .btn-accent:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-icon.btn-icon { width: 38px; height: 38px; min-height: 0; padding: 0; }
+  .btn-round.btn-round { width: 46px; height: 46px; padding: 0; font-size: 22px; line-height: 1; }
+  .text-btn, .link-btn {
+    display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: var(--ink);
+  }
+  .text-btn:hover, .link-btn:hover { background: rgba(0, 0, 0, 0.06); }
+  .text-btn:active, .link-btn:active { background: rgba(0, 0, 0, 0.1); }
+  .text-btn:focus-visible, .link-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .text-btn:disabled, .link-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .link-btn { height: auto; padding: 0 4px; text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .icon-btn {
+    width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    border-radius: 999px; color: var(--ink);
+  }
+  .icon-btn:hover { background: rgba(0, 0, 0, 0.07); }
+  .icon-btn:active { background: rgba(0, 0, 0, 0.12); }
+  .icon-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  /* --- Drop zone: warm grey with a dashed edge; turns pale gold with a black edge while files hover --- */
+  .dropzone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
+    border-radius: 18px; cursor: pointer; background: var(--band); border: 2px dashed rgba(0, 0, 0, 0.18);
+  }
+  .dropzone:hover { border-color: rgba(0, 0, 0, 0.35); }
+  .dropzone:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .dropzone.drop-active, .card.drop-active { background: var(--gold-pale); border-color: var(--ink); border-style: solid; }
+  .card.drop-active { outline: 2px solid var(--ink); outline-offset: 6px; border-radius: 12px; }
+  .dropzone.is-busy { cursor: progress; }
+  .dropzone .drop-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .dropzone .drop-icon { color: var(--ink); }
+  .browse-btn {
+    display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: 999px;
+    font-size: 14px; font-weight: 700; color: var(--gold); background: var(--ink);
+    transition: transform 160ms var(--spring);
+  }
+  .dropzone:hover .browse-btn { transform: translateY(-1px); }
+
+  /* --- Status messages --- */
+  .status { font-size: 14px; line-height: 1.5; border-radius: 12px; padding: 10px 14px; }
+  .status-info { background: var(--band); color: var(--text); }
+  .status-error { background: #fbe9e6; color: var(--err); }
+  .status-success { background: #e6f2ea; color: var(--ok); }
+
+  /* --- Queues and saved-file rows --- */
+  .queue { display: flex; flex-direction: column; gap: 6px; max-height: 236px; overflow-y: auto; border-radius: 14px; }
+  .queue.drop-active { outline: 2px solid var(--ink); outline-offset: 2px; background: var(--gold-pale); }
+  .q-row, .list-row, .result-row {
+    position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px;
+    padding: 6px 8px 6px 12px; border-radius: 14px; background: var(--band); overflow: hidden;
+  }
+  .list-row { min-height: 42px; }
+  .q-name { font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-meta { display: flex; gap: 8px; font-size: 12.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; }
+  .q-meta .q-state { overflow: hidden; text-overflow: ellipsis; }
+  .q-row[data-state="done"] .q-state { color: var(--ok); font-weight: 600; }
+  .q-row[data-state="failed"] .q-state { color: var(--err); font-weight: 600; }
+  .q-icon { width: 24px; height: 24px; flex-shrink: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); background: var(--gold); }
+  .q-row[data-state="done"] .q-icon { background: var(--ink); color: var(--gold); }
+  .q-row[data-state="failed"] .q-icon { background: var(--err); color: #fff; }
+  .q-row[data-state="cancelled"] .q-icon { background: rgba(0, 0, 0, 0.1); }
+  .q-row[data-state="working"] .q-icon { background: transparent; }
+  .q-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; transform-origin: left; background: var(--gold); transition: transform 300ms ease-out; }
+  .badge { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink); }
+  .result-row.is-playing, .q-row.is-playing { background: var(--gold-pale); }
+  .play-btn {
+    width: 32px; height: 32px; flex-shrink: 0; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--gold); background: var(--ink);
+    transition: transform 140ms var(--spring);
+  }
+  .play-btn:hover { transform: scale(1.06); }
+  .play-btn:active { transform: scale(0.94); }
+  .play-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .reveal-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .reveal-btn:hover { background: rgba(0, 0, 0, 0.07); }
+  .reveal-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  .queue-dot { width: 7px; height: 7px; border-radius: 9999px; flex-shrink: 0; }
+  .queue-dot.pending { background: rgba(0, 0, 0, 0.25); }
+  .queue-dot.working { background: var(--gold); animation: pulse 1s ease-in-out infinite; }
+  .queue-dot.done { background: var(--ok); }
+  .queue-dot.failed { background: var(--err); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* --- Save-to row --- */
+  .dest-row { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+  .dest-folder { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .dest-folder span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dest-folder svg { color: var(--ink); flex-shrink: 0; }
+
+  .join-row.join-row { background: var(--band); border: 2px solid transparent; border-radius: 14px; }
+  .join-row:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .join-row.dragging { opacity: 0.4; }
+  .join-row.drop-before { border-top-color: var(--ink); }
+  .join-row.drop-after { border-bottom-color: var(--ink); }
+  .join-handle { cursor: grab; color: var(--text-dim); }
+
+  /* --- Key & BPM readout: black tiles with gold figures, like the site's demo --- */
+  .stat-tile { background: var(--ink); }
+  .stat-tile .field-label { color: var(--gold-pale); font-weight: 600; }
+  .stat-tile .font-display { color: var(--gold); }
+  .accidental { font-family: 'Apple Symbols', -apple-system, sans-serif; margin-right: 0.02em; font-weight: 400; }
+
+  /* --- Misc --- */
+  .spinner { border: 2.5px solid rgba(0, 0, 0, 0.12); border-top-color: var(--ink); animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 180ms ease both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .divider { height: 2px; background: var(--band); }
+  .range { accent-color: var(--ink); height: 20px; cursor: pointer; }
+  .range:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+  .check { accent-color: var(--ink); width: 16px; height: 16px; cursor: pointer; }
+  .check:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .option-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 12px; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .option-row:hover { background: var(--band); }
+  .option-row:has(input:checked) { background: var(--band); font-weight: 600; }
+  .option-row:has(input:disabled) { opacity: 0.35; cursor: not-allowed; }
+  /* Edit's waveform sits on the deep-gold stage from the site's hero demo. */
+  .wave-wrap { background: var(--gold-deep); border-radius: 16px; overflow: hidden; cursor: crosshair; touch-action: none; box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.08); }
+  .metro-dot { width: 12px; height: 12px; border-radius: 9999px; background: var(--band-hover); transition: transform 90ms ease; }
+  .metro-dot.accent { width: 16px; height: 16px; }
+  .metro-dot.on { background: var(--gold); transform: scale(1.2); }
+
+  /* Several components set display with doubled classes; hidden must always win. */
+  .hidden { display: none !important; }
+
+  .stop-bar {
+    position: fixed; left: 50%; bottom: 20px; z-index: 30;
+    display: flex; align-items: center; transform: translateX(-50%);
+    background: var(--ink); color: var(--gold); border-radius: 999px;
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45);
+    transition: transform 160ms var(--spring), opacity 160ms ease;
+  }
+  .stop-bar:hover { background: #222; }
+  .stop-bar:active { transform: translateX(-50%) translateY(1px); }
+  .stop-bar:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .stop-bar.stop-bar-inactive { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(8px); }
+</style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+  <script>
+    // Room for the traffic lights when the macOS title bar is hidden (see main.js).
+    if (window.audiosmith && window.audiosmith.hiddenTitleBar) document.documentElement.classList.add('mac-titlebar');
+  </script>
+
+  <header class="appbar">
+    <div class="titlebar">
+      <span class="brand"><img src="logo.svg" alt="">PocketEdits</span>
+    </div>
+    <nav class="tabbar" role="tablist" aria-label="Tools">
+      <button type="button" role="tab" data-tab="convert">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4"/></svg>
+        Convert
+      </button>
+      <button type="button" role="tab" data-tab="vocals">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        Vocals
+      </button>
+      <button type="button" role="tab" data-tab="analyze">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+        Key &amp; BPM
+      </button>
+      <button type="button" role="tab" data-tab="edit">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
+        Edit
+      </button>
+      <button type="button" role="tab" data-tab="join">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+        Join
+      </button>
+      <button type="button" role="tab" data-tab="metronome">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 3h5L19 21H5z"/><path d="M12 16l6-9M7 17h10"/></svg>
+        Metronome
+      </button>
+    </nav>
+  </header>
+
+  <button
+    id="stop-btn"
+    type="button"
+    class="stop-bar stop-bar-inactive rounded-full px-5 py-2.5 text-sm font-semibold text-white items-center gap-2"
+  >
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+    Stop
+  </button>
+
+  <main class="w-full max-w-[468px] mx-auto relative flex flex-col gap-4 px-5 pt-[120px] pb-16">
+    <section data-panel="convert" class="flex flex-col gap-4">
+      <form id="convert-form" class="card flex flex-col gap-4" novalidate aria-label="Convert audio">
+        <div class="flex flex-col gap-2">
+          <div id="convert-drop" tabindex="0" role="button" aria-label="Add audio or video files. Drop files here or press to browse." class="dropzone px-4" style="padding-top:18px;padding-bottom:18px">
+            <p class="drop-title flex items-center gap-2">
+              <svg class="drop-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m0 0 4 4m-4-4-4 4"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+              Drop audio or video files here
+            </p>
+            <span class="browse-btn">Browse files</span>
+            <p class="hint">MP3, WAV, FLAC, M4A, MP4, MOV and more</p>
+          </div>
+
+          <div id="convert-queue-wrap" class="hidden flex flex-col gap-2">
+            <div class="flex items-center gap-1">
+              <span id="convert-queue-count" class="field-label flex-1"></span>
+              <button id="convert-add" type="button" class="text-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                Add files
+              </button>
+              <button id="convert-clear" type="button" class="text-btn">Clear all</button>
+            </div>
+            <ul id="convert-file-list" class="queue" aria-label="Files to convert"></ul>
+          </div>
+          <input id="convert-file-input" type="file" multiple accept=".wav,.wave,.aiff,.aif,.flac,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp3,.mp4,.mov,.m4v,.avi,.mkv,.webm,.flv,.wmv,.mpg,.mpeg,.3gp,.ts,audio/*,video/*" class="hidden" tabindex="-1" aria-hidden="true" />
+        </div>
+
+        <div id="convert-format"></div>
+
+        <div data-destination></div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex gap-2">
+            <button id="convert-btn" type="submit" class="btn-primary flex-1" aria-describedby="convert-hint">
+              <span id="convert-btn-fill" class="btn-fill"></span>
+              <span id="convert-btn-label" class="btn-label">Convert</span>
+            </button>
+            <button id="convert-cancel" type="button" class="btn-secondary hidden px-4" style="height:46px">Cancel</button>
+          </div>
+          <p id="convert-hint" class="hint" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section data-panel="vocals" class="hidden flex flex-col gap-4">
+      <div class="card flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <label for="model-select" class="field-label">What to remove</label>
+          <select id="model-select" class="select-field rounded-xl px-3 py-2.5 text-[13px] w-full"></select>
+          <p id="model-note" class="hint"></p>
+        </div>
+
+        <div
+          id="split-dropzone"
+          tabindex="0"
+          role="button"
+          aria-label="Drop a track to separate its vocals"
+          class="dropzone px-4 py-6"
+        >
+          <svg class="drop-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 7 7 12v5M12 7l5 5v5"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg>
+          <p id="split-label" class="drop-title">Drop a track to split</p>
+          <span class="browse-btn">Browse files</span>
+          <p class="hint">saved as two 320 kbps MP3s</p>
+          <span id="split-spinner" class="spinner hidden w-4 h-4 rounded-full mt-1"></span>
+          <input id="split-input" type="file" accept=".wav,.wave,.aiff,.aif,.flac,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp3,.mp4,.mov,.m4v,.avi,.mkv,.webm,.flv,.wmv,.mpg,.mpeg,.3gp,.ts,audio/*,video/*" class="hidden" />
+        </div>
+
+        <div data-destination></div>
+        <div id="split-status" class="hidden"></div>
+        <div id="split-results"></div>
+      </div>
+    </section>
+
+    <section data-panel="analyze" class="hidden flex flex-col gap-4">
+      <div id="analyze-card" class="card flex flex-col gap-4">
+        <div
+          id="analyze-dropzone"
+          tabindex="0"
+          role="button"
+          aria-label="Drop a track to detect its BPM and key"
+          class="dropzone px-4 py-6"
+        >
+          <svg class="drop-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-6 4 12 3-9 2 3h4"/></svg>
+          <p id="analyze-label" class="drop-title">Drop a track to analyze</p>
+          <span class="browse-btn">Browse files</span>
+          <p class="hint">detects tempo (BPM) and musical key</p>
+          <span id="analyze-spinner" class="spinner hidden w-4 h-4 rounded-full mt-1"></span>
+          <input id="analyze-input" type="file" accept=".wav,.wave,.aiff,.aif,.flac,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp3,.mp4,.mov,.m4v,.avi,.mkv,.webm,.flv,.wmv,.mpg,.mpeg,.3gp,.ts,audio/*,video/*" class="hidden" />
+        </div>
+
+        <div id="analyze-result" class="hidden fade-in">
+          <p id="analyze-title" class="text-xs text-stone-500 truncate mb-2"></p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="stat-tile rounded-xl px-4 py-3">
+              <p class="field-label">BPM</p>
+              <p id="analyze-bpm" class="font-display text-2xl text-stone-100 mt-1"></p>
+            </div>
+            <div class="stat-tile rounded-xl px-4 py-3">
+              <p class="field-label">Key</p>
+              <p id="analyze-key" class="font-display text-2xl text-stone-100 mt-1"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="analyze-status" class="hidden"></div>
+      </div>
+    </section>
+
+    <section data-panel="edit" class="hidden flex flex-col gap-4">
+      <div class="card">
+        <div
+          id="edit-dropzone"
+          tabindex="0"
+          role="button"
+          aria-label="Open a track to edit"
+          class="dropzone px-4 py-6"
+        >
+          <svg class="drop-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12h2m3-5v10m4-13v16m4-11v6m4-3h1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <p id="edit-label" class="drop-title">Drop a track to edit</p>
+          <span class="browse-btn">Browse files</span>
+          <p class="hint">trim, fade, remove silence, channels, tempo</p>
+          <span id="edit-spinner" class="spinner hidden w-4 h-4 rounded-full mt-1"></span>
+          <input id="edit-input" type="file" accept=".wav,.wave,.aiff,.aif,.flac,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp3,.mp4,.mov,.m4v,.avi,.mkv,.webm,.flv,.wmv,.mpg,.mpeg,.3gp,.ts,audio/*,video/*" class="hidden" />
+        </div>
+
+        <div id="edit-load-status" class="hidden"></div>
+
+        <div id="edit-workspace" class="hidden flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <div class="min-w-0 flex-1">
+              <p id="edit-name" class="text-sm text-stone-200 truncate"></p>
+              <p id="edit-info" class="text-[11px] text-stone-500"></p>
+            </div>
+            <button id="edit-open" type="button" class="btn-secondary rounded-lg px-3 py-1.5 text-xs">Open another</button>
+          </div>
+
+          <div class="wave-wrap rounded-xl">
+            <canvas id="edit-wave" class="block w-full" style="height: 120px"></canvas>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="edit-play" type="button" aria-label="Play" class="btn-secondary btn-icon rounded-lg">
+              <svg class="icon-play" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+              <svg class="icon-pause hidden" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>
+            </button>
+            <span id="edit-time" class="text-xs text-stone-400 tabular-nums"></span>
+            <span class="flex-1"></span>
+            <button id="edit-undo" type="button" class="btn-secondary rounded-lg px-3 py-1.5 text-xs" disabled>Undo</button>
+          </div>
+          <p id="edit-selection" class="text-[11px] text-stone-500 -mt-2">Drag across the waveform to select · click to move the playhead · space to play</p>
+
+          <div class="seg" role="tablist" aria-label="Editing tools">
+            <button type="button" data-tool-btn="trim" aria-selected="true">Trim</button>
+            <button type="button" data-tool-btn="fade">Fade</button>
+            <button type="button" data-tool-btn="silence">Silence</button>
+            <button type="button" data-tool-btn="channels">Channels</button>
+            <button type="button" data-tool-btn="tempo">Tempo</button>
+          </div>
+
+          <div data-tool="trim" class="tool-panel flex flex-col gap-3">
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Start</span>
+                <input id="trim-start" type="text" inputmode="decimal" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100 tabular-nums" />
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">End</span>
+                <input id="trim-end" type="text" inputmode="decimal" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100 tabular-nums" />
+              </label>
+            </div>
+            <p class="hint">Keeps only the part between start and end. Times as 1:15.250 or seconds.</p>
+            <div class="flex gap-2">
+              <button id="trim-play" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Play selection</button>
+              <button id="trim-apply" type="button" class="btn-accent rounded-lg px-3 py-2 text-xs flex-1">Trim to selection</button>
+            </div>
+          </div>
+
+          <div data-tool="fade" class="tool-panel hidden flex flex-col gap-3">
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Fade in (seconds)</span>
+                <input id="fade-in" type="number" min="0" step="0.1" value="2" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Fade out (seconds)</span>
+                <input id="fade-out" type="number" min="0" step="0.1" value="3" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="field-label">Shape</span>
+              <div class="seg seg-sm flex-1" role="radiogroup" aria-label="Fade shape">
+                <button type="button" data-fade-curve="linear" aria-checked="true" role="radio">Linear</button>
+                <button type="button" data-fade-curve="curved" role="radio">Curved</button>
+              </div>
+            </div>
+            <p class="hint">Curved fades start gently and tail off smoothly — usually sounds more natural.</p>
+            <div class="flex gap-2">
+              <button id="fade-preview-in" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Preview in</button>
+              <button id="fade-preview-out" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Preview out</button>
+              <button id="fade-apply" type="button" class="btn-accent rounded-lg px-3 py-2 text-xs flex-1">Apply</button>
+            </div>
+          </div>
+
+          <div data-tool="silence" class="tool-panel hidden flex flex-col gap-3">
+            <div class="flex items-center gap-4 text-xs text-stone-300">
+              <span class="field-label">Trim</span>
+              <label class="flex items-center gap-2"><input id="silence-start" type="checkbox" checked class="check" /> Beginning</label>
+              <label class="flex items-center gap-2"><input id="silence-end" type="checkbox" checked class="check" /> End</label>
+            </div>
+            <label class="flex flex-col gap-1.5">
+              <span class="field-label flex justify-between"><span>Silence threshold</span><span id="silence-threshold-value" class="normal-case tracking-normal text-stone-400"></span></span>
+              <input id="silence-threshold" type="range" min="-80" max="-20" step="1" value="-50" class="range" />
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Min. silence (ms)</span>
+                <input id="silence-min" type="number" min="0" step="50" value="300" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Padding (ms)</span>
+                <input id="silence-padding" type="number" min="0" step="10" value="100" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+            </div>
+            <p class="hint">Anything quieter than the threshold counts as silence. Shorter gaps than the minimum are left alone; padding keeps a little air before and after the sound.</p>
+            <p id="silence-summary" class="text-xs text-stone-300"></p>
+            <div class="flex gap-2">
+              <button id="silence-preview" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Preview</button>
+              <button id="silence-apply" type="button" class="btn-accent rounded-lg px-3 py-2 text-xs flex-1">Remove silence</button>
+            </div>
+          </div>
+
+          <div data-tool="channels" class="tool-panel hidden flex flex-col gap-3">
+            <p id="channels-source" class="text-xs text-stone-400"></p>
+            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Channel change">
+              <label class="option-row rounded-lg"><input type="radio" name="channel-op" value="mono" class="check" /> <span>Stereo → mono <span class="text-stone-500">(mix both sides)</span></span></label>
+              <label class="option-row rounded-lg"><input type="radio" name="channel-op" value="left" class="check" /> <span>Left channel only <span class="text-stone-500">(mono)</span></span></label>
+              <label class="option-row rounded-lg"><input type="radio" name="channel-op" value="right" class="check" /> <span>Right channel only <span class="text-stone-500">(mono)</span></span></label>
+              <label class="option-row rounded-lg"><input type="radio" name="channel-op" value="swap" class="check" /> <span>Swap left and right</span></label>
+              <label class="option-row rounded-lg"><input type="radio" name="channel-op" value="dual" class="check" /> <span>Mono → dual mono <span class="text-stone-500">(same sound both sides)</span></span></label>
+            </div>
+            <div class="flex gap-2">
+              <button id="channels-preview" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Preview</button>
+              <button id="channels-apply" type="button" class="btn-accent rounded-lg px-3 py-2 text-xs flex-1">Apply</button>
+            </div>
+          </div>
+
+          <div data-tool="tempo" class="tool-panel hidden flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <span class="field-label">Set by</span>
+              <div class="seg seg-sm flex-1" role="radiogroup" aria-label="Tempo mode">
+                <button type="button" data-tempo-mode="percent" aria-checked="true" role="radio">Percentage</button>
+                <button type="button" data-tempo-mode="bpm" role="radio">BPM</button>
+              </div>
+            </div>
+            <label data-tempo-fields="percent" class="flex flex-col gap-1.5">
+              <span class="field-label">New speed (% of original)</span>
+              <input id="tempo-percent" type="number" min="25" max="400" step="1" value="100" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+            </label>
+            <div data-tempo-fields="bpm" class="hidden grid grid-cols-2 gap-3">
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label flex justify-between items-center"><span>Original BPM</span><button id="tempo-detect" type="button" class="link-btn normal-case tracking-normal">Detect</button></span>
+                <input id="tempo-from" type="number" min="20" max="400" step="0.1" placeholder="e.g. 120" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+              <label class="flex flex-col gap-1.5">
+                <span class="field-label">Target BPM</span>
+                <input id="tempo-to" type="number" min="20" max="400" step="0.1" placeholder="e.g. 128" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100" />
+              </label>
+            </div>
+            <label class="flex items-center gap-2 text-xs text-stone-300">
+              <input id="tempo-keep-pitch" type="checkbox" checked class="check" /> Keep the original pitch
+            </label>
+            <p id="tempo-summary" class="hint"></p>
+            <div class="flex gap-2">
+              <button id="tempo-preview" type="button" class="btn-secondary rounded-lg px-3 py-2 text-xs flex-1">Preview</button>
+              <button id="tempo-apply" type="button" class="btn-accent rounded-lg px-3 py-2 text-xs flex-1">Apply</button>
+            </div>
+          </div>
+
+          <div id="edit-status" class="hidden"></div>
+
+          <div id="edit-format"></div>
+          <div data-destination></div>
+          <button id="edit-save" type="button" class="btn-primary">Save</button>
+          <div id="edit-results"></div>
+        </div>
+      </div>
+    </section>
+
+    <section data-panel="join" class="hidden flex flex-col gap-4">
+      <div class="card flex flex-col gap-4">
+        <div
+          id="join-dropzone"
+          tabindex="0"
+          role="button"
+          aria-label="Add files to join"
+          class="dropzone px-4 py-6"
+        >
+          <svg class="drop-icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="8" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+            <rect x="14" y="8" width="7" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M10 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <p class="drop-title">Drop files to join</p>
+          <span class="browse-btn">Browse files</span>
+          <p class="hint">add as many as you like — drag to reorder</p>
+          <input id="join-input" type="file" multiple accept=".wav,.wave,.aiff,.aif,.flac,.m4a,.aac,.ogg,.opus,.wma,.caf,.mp3,.mp4,.mov,.m4v,.avi,.mkv,.webm,.flv,.wmv,.mpg,.mpeg,.3gp,.ts,audio/*,video/*" class="hidden" />
+        </div>
+
+        <ol id="join-list" class="flex flex-col gap-1.5"></ol>
+
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <span class="field-label">Between</span>
+            <div class="seg seg-sm flex-1" role="radiogroup" aria-label="Between files">
+              <button type="button" data-join-mode="none" aria-checked="true" role="radio">Nothing</button>
+              <button type="button" data-join-mode="gap" role="radio">Gap</button>
+              <button type="button" data-join-mode="crossfade" role="radio">Crossfade</button>
+            </div>
+          </div>
+          <label id="join-seconds-row" class="hidden flex items-center gap-3">
+            <span class="field-label w-16">Seconds</span>
+            <input id="join-seconds" type="number" min="0.1" max="30" step="0.1" value="2" class="input-field rounded-xl px-3 py-2 text-xs text-stone-100 flex-1" />
+          </label>
+          <p id="join-summary" class="hint"></p>
+        </div>
+
+        <div id="join-status" class="hidden"></div>
+
+        <div id="join-format"></div>
+        <div data-destination></div>
+        <div class="flex gap-3">
+          <button id="join-preview" type="button" class="btn-secondary px-5" style="height:46px">Preview</button>
+          <button id="join-save" type="button" class="btn-primary flex-1">Join &amp; save</button>
+        </div>
+        <div id="join-results"></div>
+      </div>
+    </section>
+
+    <section data-panel="metronome" class="hidden flex flex-col gap-4">
+      <div class="card flex flex-col gap-5">
+        <div id="metro-dots" class="flex justify-center gap-2.5 h-4 items-center" aria-hidden="true"></div>
+
+        <div class="flex items-center justify-center gap-5">
+          <button id="metro-down" type="button" aria-label="Slower" class="btn-secondary btn-round rounded-full">−</button>
+          <div class="text-center">
+            <p id="metro-bpm" class="font-display text-6xl text-stone-100 tabular-nums" style="letter-spacing: -0.03em">120</p>
+            <p class="field-label mt-1">BPM</p>
+          </div>
+          <button id="metro-up" type="button" aria-label="Faster" class="btn-secondary btn-round rounded-full">+</button>
+        </div>
+
+        <input id="metro-slider" type="range" min="30" max="300" step="1" value="120" aria-label="Tempo" class="range" />
+
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="field-label">Beats per bar</span>
+            <select id="metro-beats" class="select-field rounded-xl px-3 py-2 text-xs"></select>
+          </label>
+          <div class="flex flex-col gap-1.5">
+            <span class="field-label">Tap tempo</span>
+            <button id="metro-tap" type="button" class="btn-secondary rounded-xl py-2 text-xs">Tap</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 text-xs text-stone-300 whitespace-nowrap">
+            <input id="metro-accent" type="checkbox" checked class="check" /> Accent beat 1
+          </label>
+          <label class="flex items-center gap-2 flex-1">
+            <span class="field-label">Volume</span>
+            <input id="metro-volume" type="range" min="0" max="1" step="0.01" value="0.7" class="range flex-1" />
+          </label>
+        </div>
+
+        <button id="metro-toggle" type="button" class="btn-primary">Start</button>
+        <p class="hint text-center -mt-2">Space bar starts and stops</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/common.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/audio-tools.js"></script>
+  <script src="js/results.js"></script>
+  <script src="js/format-picker.js"></script>
+  <script src="js/convert.js"></script>
+  <script src="js/vocals.js"></script>
+  <script src="js/analyze.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/join.js"></script>
+  <script src="js/metronome.js"></script>
+</body>
+</html>

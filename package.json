@@ -1,0 +1,60 @@
+{
+  "name": "pocketedits",
+  "version": "1.0.0",
+  "description": "Audio converter, vocal remover and editor",
+  "main": "main.js",
+  "scripts": {
+    "start": "node server.js",
+    "electron": "electron .",
+    "dist": "APPLE_KEYCHAIN_PROFILE=pocketedits electron-builder --mac",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-2.0-or-later",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.lydianmusicstudio.pocketedits",
+    "productName": "PocketEdits",
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.js",
+      "public/**/*",
+      "vendor/**",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "vendor/**"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.music",
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "identity": "Victor Wang (RC4J57AQV3)",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true,
+      "signIgnore": [
+        "app\\.asar\\.unpacked/(?!.*\\.(so|dylib)$)(?!.*/(python3\\.11|torch_shm_manager|protoc|protoc-3\\.21\\.12\\.0|ffmpeg)$)"
+      ]
+    },
+    "dmg": {
+      "sign": true
+    }
+  }
+}
