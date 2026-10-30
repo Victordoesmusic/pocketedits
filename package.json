@@ -1,6 +1,6 @@
 {
   "name": "pocketedits",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Audio converter, vocal remover and editor",
   "main": "main.js",
   "scripts": {
@@ -35,6 +35,16 @@
     "asar": true,
     "asarUnpack": [
       "vendor/**"
+    ],
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE.txt"
+      },
+      {
+        "from": "THIRD-PARTY-NOTICES.md",
+        "to": "THIRD-PARTY-NOTICES.md"
+      }
     ],
     "directories": {
       "output": "dist"
