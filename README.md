@@ -18,3 +18,7 @@ Get the latest `.dmg` from [Releases](../../releases/latest), open it, and drag 
 **Requirements:** a Mac with Apple Silicon (M1 or newer), macOS 12 or later, and an internet connection when the app opens.
 
 The app is signed and notarised by Apple, so it opens without security warnings.
+
+## Support PocketEdits
+
+PocketEdits is free. If it helps you, you can [buy me a coffee on Ko-fi](https://ko-fi.com/victorsaudiogadgets) ☕
